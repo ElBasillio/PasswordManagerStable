@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    {% if account.icon %}
+                    <img src="{{ account.icon }}" alt="{{ account.title }}" class="me-2" style="width: 24px; height: 24px;">
+                    {% endif %}
+                    <h4 class="mb-0">{{ account.title }}</h4>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm favorite-btn" data-account-id="{{ account.id }}"
+                        data-favorite="{{ account.is_favorite|tojson }}">
+                        <i class="bi bi-star{% if account.is_favorite %}-fill text-warning{% endif %}"></i>
+                        {% if account.is_favorite %}Unfavorite{% else %}Favorite{% endif %}
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5>Account Details</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Username</dt>
+                            <dd class="col-sm-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" value="{{ account.username }}" readonly>
+                                    <button class="btn btn-outline-secondary copy-btn" data-value="{{ account.username }}">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </dd>
+
+                            <dt class="col-sm-4">Password</dt>
+                            <dd class="col-sm-8">
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" value="••••••••" readonly>
+                                    <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary copy-password" data-account-id="{{ account.id }}">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </dd>
+
+                            {% if account.url %}
+                            <dt class="col-sm-4">URL</dt>
+                            <dd class="col-sm-8">
+                                <a href="{{ account.url }}" target="_blank" rel="noopener noreferrer">{{ account.url }}</a>
+                            </dd>
+                            {% endif %}
+
+                            {% if account.category %}
+                            <dt class="col-sm-4">Category</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-secondary">{{ account.category.name }}</span>
+                            </dd>
+                            {% endif %}
+
+                            {% if account.tags %}
+                            <dt class="col-sm-4">Tags</dt>
+                            <dd class="col-sm-8">
+                                {% for tag in account.tags %}
+                                <span class="badge bg-info">{{ tag.name }}</span>
+                                {% endfor %}
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5>Additional Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Vault</dt>
+                            <dd class="col-sm-8">
+                                <a href="{{ url_for('main.view_vault', id=account.vault_id) }}">{{ account.vault.name }}</a>
+                            </dd>
+
+                            {% if account.password_expires_at %}
+                            <dt class="col-sm-4">Expires</dt>
+                            <dd class="col-sm-8">{{ account.password_expires_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                            {% endif %}
+
+                            <dt class="col-sm-4">Created</dt>
+                            <dd class="col-sm-8">{{ account.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                            <dt class="col-sm-4">Last Modified</dt>
+                            <dd class="col-sm-8">{{ account.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                            <dt class="col-sm-4">Last Accessed</dt>
+                            <dd class="col-sm-8">{{ account.last_accessed.strftime('%Y-%m-%d %H:%M') if account.last_accessed else 'Never' }}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                {% if account.notes %}
+                <div class="mb-4">
+                    <h5>Notes</h5>
+                    <div class="card">
+                        <div class="card-body bg-light">
+                            {{ account.notes|nl2br }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if account.custom_fields %}
+                <div class="mb-4">
+                    <h5>Custom Fields</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for field_name, field_value in account.custom_fields.items() %}
+                                <tr>
+                                    <th style="width: 200px;">{{ field_name }}</th>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" value="{{ field_value }}" readonly>
+                                            <button class="btn btn-outline-secondary copy-btn" data-value="{{ field_value }}">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.view_vault', id=account.vault_id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Vault
+                    </a>
+                    <div>
+                        <a href="#" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </a>
+                        <a href="#" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        let password = null;
+
+        // Handle favorite toggle
+        $('.favorite-btn').click(function() {
+            const btn = $(this);
+            const accountId = btn.data('account-id');
+            
+            $.post(`/accounts/${accountId}/toggle-favorite`)
+                .done(function(response) {
+                    const icon = btn.find('i');
+                    if (response.is_favorite) {
+                        icon.removeClass('bi-star').addClass('bi-star-fill text-warning');
+                        btn.contents().filter(function() {
+                            return this.nodeType === 3;
+                        }).replaceWith(' Unfavorite');
+                    } else {
+                        icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
+                        btn.contents().filter(function() {
+                            return this.nodeType === 3;
+                        }).replaceWith(' Favorite');
+                    }
+                })
+                .fail(function() {
+                    alert('Failed to update favorite status');
+                });
+        });
+
+        // Handle password visibility toggle
+        $('#togglePassword').on('click', function(e) {
+            e.preventDefault();
+            const passwordInput = $('#password');
+            const icon = $(this).find('i');
+
+            if (passwordInput.attr('type') === 'password') {
+                if (!password) {
+                    $.get(`/accounts/{{ account.id }}/password`)
+                        .done(function(response) {
+                            password = response.password;
+                            passwordInput.val(password).attr('type', 'text');
+                            icon.removeClass('bi-eye').addClass('bi-eye-slash');
+                        })
+                        .fail(function(jqXHR, textStatus, errorThrown) {
+                            console.error('Error:', errorThrown);
+                            alert('Failed to get password: ' + errorThrown);
+                        });
+                } else {
+                    passwordInput.val(password).attr('type', 'text');
+                    icon.removeClass('bi-eye').addClass('bi-eye-slash');
+                }
+            } else {
+                passwordInput.val('••••••••').attr('type', 'password');
+                icon.removeClass('bi-eye-slash').addClass('bi-eye');
+            }
+        });
+
+        // Handle password copy
+        $('.copy-password').click(function() {
+            const btn = $(this);
+            
+            if (!password) {
+                $.get(`/accounts/{{ account.id }}/password`)
+                    .done(function(response) {
+                        password = response.password;
+                        copyToClipboard(password, btn);
+                    })
+                    .fail(function() {
+                        alert('Failed to get password');
+                    });
+            } else {
+                copyToClipboard(password, btn);
+            }
+        });
+
+        // Handle general copy buttons
+        $('.copy-btn').click(function() {
+            const btn = $(this);
+            const value = btn.data('value');
+            copyToClipboard(value, btn);
+        });
+
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const icon = btn.find('i');
+                    icon.removeClass('bi-clipboard').addClass('bi-clipboard-check');
+                    setTimeout(() => {
+                        icon.removeClass('bi-clipboard-check').addClass('bi-clipboard');
+                    }, 2000);
+                })
+                .catch(() => alert('Failed to copy to clipboard'));
+        }
+    });
+</script>
+{% endblock %} 

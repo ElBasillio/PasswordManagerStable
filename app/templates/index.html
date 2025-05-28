@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recently Accessed</h5>
+                <a href="{{ url_for('main.search') }}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_accounts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Username</th>
+                                <th>Vault</th>
+                                <th>Last Accessed</th>
+                                <th style="width: 100px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in recent_accounts %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if account.icon %}
+                                        <img src="{{ account.icon }}" alt="{{ account.title }}" class="me-2"
+                                            style="width: 16px; height: 16px;">
+                                        {% endif %}
+                                        {{ account.title }}
+                                    </div>
+                                </td>
+                                <td>{{ account.username }}</td>
+                                <td>
+                                    <a href="{{ url_for('main.view_vault', id=account.vault_id) }}">
+                                        {{ account.vault.name }}
+                                    </a>
+                                </td>
+                                <td>{{ account.last_accessed.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary copy-password"
+                                            data-account-id="{{ account.id }}" title="Copy password">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No recently accessed accounts</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+            {% for vault in vaults %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            {% if vault.icon %}
+                            <img src="{{ vault.icon }}" alt="{{ vault.name }}" class="me-2"
+                                style="width: 24px; height: 24px;">
+                            {% else %}
+                            <i class="bi bi-folder-fill me-2 fs-4"></i>
+                            {% endif %}
+                            <h5 class="card-title mb-0">{{ vault.name }}</h5>
+                        </div>
+                        <p class="card-text text-muted">
+                            {{ vault.accounts.count() }} accounts
+                        </p>
+                        <a href="{{ url_for('main.view_vault', id=vault.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-arrow-right"></i> View Vault
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-star"></i> Favorites</h5>
+            </div>
+            <div class="card-body">
+                {% if favorite_accounts %}
+                <div class="list-group list-group-flush">
+                    {% for account in favorite_accounts %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center flex-grow-1 me-3">
+                                {% if account.icon %}
+                                <img src="{{ account.icon }}" alt="{{ account.title }}" class="me-2"
+                                    style="width: 16px; height: 16px;">
+                                {% endif %}
+                                <div class="text-truncate">
+                                    <h6 class="mb-0 text-truncate">{{ account.title }}</h6>
+                                    <small class="text-muted text-truncate">{{ account.username }}</small>
+                                </div>
+                            </div>
+                            <div class="btn-group flex-shrink-0">
+                                <button class="btn btn-sm btn-outline-secondary copy-password"
+                                    data-account-id="{{ account.id }}" title="Copy password">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No favorite accounts</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plus-lg"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.new_vault') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-folder-plus"></i> New Vault
+                    </a>
+                    <a href="{{ url_for('main.new_account') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-key"></i> New Account
+                    </a>
+                    <a href="{{ url_for('main.new_category') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-tag"></i> New Category
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Handle password copy
+        $('.copy-password').click(function() {
+            const btn = $(this);
+            const accountId = btn.data('account-id');
+            
+            $.get(`/accounts/${accountId}/password`)
+                .done(function(response) {
+                    navigator.clipboard.writeText(response.password)
+                        .then(() => {
+                            const icon = btn.find('i');
+                            icon.removeClass('bi-clipboard').addClass('bi-clipboard-check');
+                            setTimeout(() => {
+                                icon.removeClass('bi-clipboard-check').addClass('bi-clipboard');
+                            }, 2000);
+                        })
+                        .catch(() => alert('Failed to copy password'));
+                })
+                .fail(function() {
+                    alert('Failed to get password');
+                });
+        });
+    });
+</script>
+{% endblock %} 

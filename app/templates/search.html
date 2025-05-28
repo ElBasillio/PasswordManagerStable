@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('main.search') }}">
+                    <div class="mb-3">
+                        {{ form.query.label(class="form-label") }}
+                        {{ form.query(class="form-control", placeholder="Search accounts...") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.vault.label(class="form-label") }}
+                        {{ form.vault(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.category.label(class="form-label") }}
+                        {{ form.category(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.favorites_only(class="form-check-input") }}
+                            {{ form.favorites_only.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        {% if request.args.get('query') or request.args.get('vault') or request.args.get('category') or request.args.get('favorites_only') %}
+            {% if accounts %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th>Title</th>
+                                    <th>Username</th>
+                                    <th>URL</th>
+                                    <th>Vault</th>
+                                    <th>Category</th>
+                                    <th style="width: 100px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in accounts %}
+                                <tr>
+                                    <td class="text-center">
+                                        <button class="btn btn-link btn-sm p-0 favorite-btn" data-account-id="{{ account.id }}"
+                                            data-favorite="{{ account.is_favorite|tojson }}">
+                                            <i class="bi bi-star{% if account.is_favorite %}-fill text-warning{% endif %}"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if account.icon %}
+                                            <img src="{{ account.icon }}" alt="{{ account.title }}" class="me-2"
+                                                style="width: 16px; height: 16px;">
+                                            {% endif %}
+                                            {{ account.title }}
+                                        </div>
+                                    </td>
+                                    <td>{{ account.username }}</td>
+                                    <td>
+                                        {% if account.url %}
+                                        <a href="{{ account.url }}" target="_blank" rel="noopener noreferrer">
+                                            {{ account.url|truncate(30) }}
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('main.view_vault', id=account.vault_id) }}">
+                                            {{ account.vault.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if account.category %}
+                                        <span class="badge bg-secondary">{{ account.category.name }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-outline-secondary copy-password"
+                                                data-account-id="{{ account.id }}" title="Copy password">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No accounts found matching your search criteria.
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-search display-1 text-muted"></i>
+            <h3 class="mt-3">Search Your Accounts</h3>
+            <p class="text-muted">Use the filters on the left to find specific accounts.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Handle favorite toggle
+        $('.favorite-btn').click(function() {
+            const btn = $(this);
+            const accountId = btn.data('account-id');
+            
+            $.post(`/accounts/${accountId}/toggle-favorite`)
+                .done(function(response) {
+                    const icon = btn.find('i');
+                    if (response.is_favorite) {
+                        icon.removeClass('bi-star').addClass('bi-star-fill text-warning');
+                    } else {
+                        icon.removeClass('bi-star-fill text-warning').addClass('bi-star');
+                    }
+                })
+                .fail(function() {
+                    alert('Failed to update favorite status');
+                });
+        });
+
+        // Handle password copy
+        $('.copy-password').click(function() {
+            const btn = $(this);
+            const accountId = btn.data('account-id');
+            
+            $.get(`/accounts/${accountId}/password`)
+                .done(function(response) {
+                    navigator.clipboard.writeText(response.password)
+                        .then(() => {
+                            const icon = btn.find('i');
+                            icon.removeClass('bi-clipboard').addClass('bi-clipboard-check');
+                            setTimeout(() => {
+                                icon.removeClass('bi-clipboard-check').addClass('bi-clipboard');
+                            }, 2000);
+                        })
+                        .catch(() => alert('Failed to copy password'));
+                })
+                .fail(function() {
+                    alert('Failed to get password');
+                });
+        });
+    });
+</script>
+{% endblock %} 

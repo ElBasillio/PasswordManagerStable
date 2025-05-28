@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Vaults{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-folder"></i> Your Vaults</h1>
+    <a href="{{ url_for('main.new_vault') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Vault
+    </a>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for vault in vaults %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    {% if vault.icon %}
+                    <img src="{{ vault.icon }}" alt="{{ vault.name }}" class="me-2" style="width: 24px; height: 24px;">
+                    {% else %}
+                    <i class="bi bi-folder-fill me-2 fs-4"></i>
+                    {% endif %}
+                    <h5 class="card-title mb-0">{{ vault.name }}</h5>
+                </div>
+                {% if vault.description %}
+                <p class="card-text">{{ vault.description }}</p>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        {{ vault.accounts.count() }} accounts
+                    </small>
+                    <a href="{{ url_for('main.view_vault', id=vault.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-right"></i> View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> You don't have any vaults yet. Create one to start organizing your accounts!
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

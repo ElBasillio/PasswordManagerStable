@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3">Your Passwords</h1>
+    </div>
+    <div class="col text-end">
+        <a href="{{ url_for('main.add_password') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Password
+        </a>
+    </div>
+</div>
+
+{% if passwords %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for password in passwords %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ password.title }}</h5>
+                <p class="card-text">
+                    <strong>Username:</strong> {{ password.username }}<br>
+                    {% if password.url %}
+                    <strong>URL:</strong> <a href="{{ password.url }}" target="_blank">{{ password.url }}</a><br>
+                    {% endif %}
+                    <strong>Created:</strong> {{ password.created_at.strftime('%Y-%m-%d') }}
+                </p>
+                <div class="btn-group">
+                    <a href="{{ url_for('main.edit_password', id=password.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{{ password.id }}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    You haven't stored any passwords yet. Click the "Add New Password" button to get started.
+</div>
+{% endif %}
+
+<script>
+function confirmDelete(id) {
+    if (confirm('Are you sure you want to delete this password?')) {
+        window.location.href = "{{ url_for('main.delete_password', id=0) }}".replace('0', id);
+    }
+}
+</script>
+{% endblock %} 
